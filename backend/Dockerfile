@@ -11,6 +11,12 @@ founders@danswer.ai for more information. Please visit https://github.com/danswe
 ARG DANSWER_VERSION=0.3-dev
 ENV DANSWER_VERSION=${DANSWER_VERSION}
 
+# Add Unstructured dependencies
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN echo "DANSWER_VERSION: ${DANSWER_VERSION}"
 # Install system dependencies
 # cmake needed for psycopg (postgres)
