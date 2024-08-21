@@ -21,6 +21,10 @@ from danswer.configs.constants import DANSWER_METADATA_FILENAME
 from danswer.file_processing.html_utils import parse_html_page_basic
 from danswer.utils.logger import setup_logger
 
+from unstructured_client import UnstructuredClient
+from unstructured_client.models import operations, shared
+from unstructured.staging.base import dict_to_elements
+
 logger = setup_logger()
 
 
@@ -51,6 +55,54 @@ VALID_FILE_EXTENSIONS = PLAIN_TEXT_FILE_EXTENSIONS + [
     ".epub",
     ".html",
 ]
+
+def _sdk_partition_request(file: IO[Any], file_name: str, **kwargs) -> operations.PartitionRequest:
+    logger.info(f"Creating partition request for file: {file_name}")
+    try:
+        request = operations.PartitionRequest(
+            partition_parameters=shared.PartitionParameters(
+                files=shared.Files(
+                    content=file.read(), file_name=file_name
+                ),
+                **kwargs,
+            ),
+        )
+        logger.info(f"Partition request created successfully for file: {file_name}")
+        return request
+    except Exception as e:
+        logger.error(f"Error creating partition request for file {file_name}: {str(e)}")
+        raise
+
+def read_any_file(file: IO[Any], file_name: str) -> str:
+    logger.info(f"Starting to read file: {file_name}")
+    try:
+        UNSTRUCTURED_API_KEY = os.getenv('UNSTRUCTURED_API_KEY')
+
+        if UNSTRUCTURED_API_KEY is None:
+            raise ValueError("UNSTRUCTURED_API_KEY is not set")
+        logger.info("Initializing UnstructuredClient")
+        client = UnstructuredClient(api_key_auth=UNSTRUCTURED_API_KEY)
+
+        logger.info("Creating partition request")
+        req = _sdk_partition_request(file, file_name, strategy="auto")
+
+        logger.info("Sending partition request to API")
+        response = client.general.partition(req)  # type: ignore
+
+        logger.info("Converting response to elements")
+        elements = dict_to_elements(response.elements)
+
+        if response.status_code == 200:
+            logger.info(f"Successfully read file: {file_name}")
+            return "\n\n".join([str(el) for el in elements])
+        else:
+            logger.error(f"Received unexpected status code {response.status_code} from the API.")
+            raise ValueError(
+                f"Received unexpected status code {response.status_code} from the API.",
+            )
+    except Exception as e:
+        logger.exception(f"Failed to read file {file_name}: {str(e)}")
+        return ""
 
 
 def is_text_file_extension(file_name: str) -> bool:
