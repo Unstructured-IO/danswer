@@ -116,6 +116,7 @@ services:
       - indexing_model_server
     restart: always
     environment:
+      - UNSTRUCTURED_API_KEY=${UNSTRUCTURED_API_KEY:-}
       - ENCRYPTION_KEY_SECRET=${ENCRYPTION_KEY_SECRET:-}
       # Gen AI Settings (Needed by DanswerBot)
       - GEN_AI_MODEL_PROVIDER=${GEN_AI_MODEL_PROVIDER:-}
