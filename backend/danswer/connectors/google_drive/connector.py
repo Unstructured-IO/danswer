@@ -43,10 +43,10 @@ from danswer.connectors.models import Section
 from danswer.file_processing.extract_file_text import docx_to_text
 from danswer.file_processing.extract_file_text import pdf_to_text
 from danswer.file_processing.extract_file_text import pptx_to_text
-from danswer.file_processing.extract_file_text import read_any_file
 from danswer.utils.batching import batch_generator
 from danswer.utils.logger import setup_logger
 
+from danswer.file_processing.extract_file_text import read_any_file
 
 logger = setup_logger()
 
@@ -65,6 +65,25 @@ class GDriveMimeType(str, Enum):
     POWERPOINT = (
         "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     )
+    BMP = "image/bmp"
+    CSV = "text/csv"
+    EML = "message/rfc822"
+    EPUB = "application/epub+zip"
+    HEIC = "image/heic"
+    HTML = "text/html"
+    JPEG = "image/jpeg"
+    PNG = "image/png"
+    MD = "text/markdown"
+    MSG = "application/vnd.ms-outlook"
+    ODT = "application/vnd.oasis.opendocument.text"
+    ORG = "text/x-org"
+    P7S = "application/pkcs7-signature"
+    RST = "text/x-rst"
+    RTF = "application/rtf"
+    TIFF = "image/tiff"
+    TXT = "text/plain"
+    TSV = "text/tab-separated-values"
+    XML = "application/xml"
 
 
 GoogleDriveFileType = dict[str, Any]
@@ -309,33 +328,20 @@ def get_all_files_batched(
 
 def extract_text(file: dict[str, str], service: discovery.Resource) -> str:
     mime_type = file["mimeType"]
+
     if mime_type not in set(item.value for item in GDriveMimeType):
-        # Unsupported file types can still have a title, finding this way is still useful
         return UNSUPPORTED_FILE_TYPE_CONTENT
 
     if mime_type == GDriveMimeType.DOC.value:
         response = service.files().export(fileId=file["id"], mimeType="text/plain").execute()
-        return read_any_file(file=io.BytesIO(response), file_name=file['name'])
     elif mime_type == GDriveMimeType.SPREADSHEET.value:
         response = service.files().export(fileId=file["id"], mimeType="text/csv").execute()
-        return read_any_file(file=io.BytesIO(response), file_name=file['name'])
-    elif mime_type == GDriveMimeType.EXCEL.value:
-        response = service.files().get_media(fileId=file["id"]).execute()
-        return read_any_file(file=io.BytesIO(response), file_name=file['name'])
-    elif mime_type == GDriveMimeType.WORD_DOC.value:
-        response = service.files().get_media(fileId=file["id"]).execute()
-        return read_any_file(file=io.BytesIO(response), file_name = file['name']) # DOCX
-    elif mime_type == GDriveMimeType.PDF.value:
-        response = service.files().get_media(fileId=file["id"]).execute()
-        return read_any_file(file=io.BytesIO(response), file_name = file['name']) # PDF
-    elif mime_type == GDriveMimeType.POWERPOINT.value:
-        response = service.files().get_media(fileId=file["id"]).execute()
-        return read_any_file(file=io.BytesIO(response), file_name = file['name']) #PPT
     elif mime_type == GDriveMimeType.PPT.value:
+        response = service.files().export(fileId=file["id"], mimeType="text/plain").execute()
+    else:
         response = service.files().get_media(fileId=file["id"]).execute()
-        return read_any_file(file=io.BytesIO(response), file_name = file['name']) # PPT
 
-    return UNSUPPORTED_FILE_TYPE_CONTENT
+    return read_any_file(file=io.BytesIO(response), file_name=file['name'])
 
 
 class GoogleDriveConnector(LoadConnector, PollConnector):
