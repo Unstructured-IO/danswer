@@ -27,7 +27,6 @@ from unstructured.staging.base import dict_to_elements
 
 logger = setup_logger()
 
-
 TEXT_SECTION_SEPARATOR = "\n\n"
 
 
@@ -43,6 +42,8 @@ PLAIN_TEXT_FILE_EXTENSIONS = [
     ".xml",
     ".yml",
     ".yaml",
+    ".rst",
+    ".org",
 ]
 
 
@@ -54,6 +55,18 @@ VALID_FILE_EXTENSIONS = PLAIN_TEXT_FILE_EXTENSIONS + [
     ".eml",
     ".epub",
     ".html",
+    ".bmp",
+    ".doc",
+    ".heic",
+    ".jpeg",
+    ".png",
+    ".msg",
+    ".odt",
+    ".p7s",
+    ".ppt",
+    ".rtf",
+    ".tiff",
+    ".xls",
 ]
 
 def _sdk_partition_request(file: IO[Any], file_name: str, **kwargs) -> operations.PartitionRequest:
